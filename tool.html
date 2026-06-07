@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Language Translation Tool</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --bg-secondary: #f5f5f3;
+      --bg-tertiary: #ededea;
+      --text-primary: #1a1a18;
+      --text-secondary: #6b6b67;
+      --text-tertiary: #9c9c97;
+      --border: rgba(0,0,0,0.12);
+      --border-secondary: rgba(0,0,0,0.22);
+      --border-primary: rgba(0,0,0,0.35);
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --danger: #c0392b;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1e1e1c;
+        --bg-secondary: #2a2a28;
+        --bg-tertiary: #333331;
+        --text-primary: #f0efe8;
+        --text-secondary: #a0a09b;
+        --text-tertiary: #6b6b67;
+        --border: rgba(255,255,255,0.1);
+        --border-secondary: rgba(255,255,255,0.18);
+        --border-primary: rgba(255,255,255,0.28);
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      background: var(--bg);
+      border-radius: var(--radius-lg);
+      border: 0.5px solid var(--border);
+      padding: 1.75rem;
+      width: 100%;
+      max-width: 700px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1.5rem;
+    }
+
+    .header i {
+      font-size: 22px;
+      color: var(--text-secondary);
+    }
+
+    .header h1 {
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .lang-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1rem;
+    }
+
+    select {
+      width: 100%;
+      height: 36px;
+      padding: 0 10px;
+      border-radius: var(--radius-md);
+      border: 0.5px solid var(--border);
+      background: var(--bg);
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 28px;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--border-primary);
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.06);
+    }
+
+    .swap-btn {
+      background: var(--bg-secondary);
+      border: 0.5px solid var(--border-secondary);
+      border-radius: var(--radius-md);
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s;
+      color: var(--text-secondary);
+    }
+
+    .swap-btn:hover { background: var(--bg-tertiary); }
+    .swap-btn i { font-size: 16px; }
+
+    .panels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 1rem;
+    }
+
+    @media (max-width: 500px) {
+      .panels { grid-template-columns: 1fr; }
+      .lang-row { grid-template-columns: 1fr auto 1fr; }
+    }
+
+    .panel label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 160px;
+      resize: vertical;
+      font-size: 14px;
+      line-height: 1.6;
+      padding: 12px;
+      border-radius: var(--radius-md);
+      border: 0.5px solid var(--border);
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: inherit;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--border-primary);
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.06);
+    }
+
+    .output {
+      background: var(--bg-secondary);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      min-height: 160px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-primary);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .output.empty { color: var(--text-tertiary); }
+    .output.loading { color: var(--text-secondary); font-style: italic; }
+
+    .char-count {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      text-align: right;
+      margin-top: 4px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .translate-btn {
+      flex: 1;
+      padding: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: var(--radius-md);
+      border: 0.5px solid var(--border-secondary);
+      background: var(--bg);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.15s;
+      font-family: inherit;
+    }
+
+    .translate-btn:hover { background: var(--bg-secondary); }
+    .translate-btn:active { transform: scale(0.98); }
+    .translate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .icon-btn {
+      background: var(--bg-secondary);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-md);
+      width: 38px;
+      height: 38px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+      color: var(--text-secondary);
+    }
+
+    .icon-btn:hover { background: var(--bg-tertiary); }
+    .icon-btn i { font-size: 17px; }
+
+    .error {
+      font-size: 13px;
+      color: var(--danger);
+      margin-top: 8px;
+      display: none;
+    }
+
+    .api-note {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 0.5px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <i class="ti ti-language" aria-hidden="true"></i>
+    <h1>Language translator</h1>
+  </div>
+
+  <div class="lang-row">
+    <select id="src-lang">
+      <option value="auto">Detect language</option>
+      <option value="English">English</option>
+      <option value="Spanish">Spanish</option>
+      <option value="French">French</option>
+      <option value="German">German</option>
+      <option value="Italian">Italian</option>
+      <option value="Portuguese">Portuguese</option>
+      <option value="Dutch">Dutch</option>
+      <option value="Russian">Russian</option>
+      <option value="Chinese (Simplified)">Chinese (Simplified)</option>
+      <option value="Chinese (Traditional)">Chinese (Traditional)</option>
+      <option value="Japanese">Japanese</option>
+      <option value="Korean">Korean</option>
+      <option value="Arabic">Arabic</option>
+      <option value="Hindi">Hindi</option>
+      <option value="Bengali">Bengali</option>
+      <option value="Turkish">Turkish</option>
+      <option value="Polish">Polish</option>
+      <option value="Ukrainian">Ukrainian</option>
+      <option value="Greek">Greek</option>
+      <option value="Swedish">Swedish</option>
+      <option value="Norwegian">Norwegian</option>
+      <option value="Danish">Danish</option>
+      <option value="Finnish">Finnish</option>
+      <option value="Hebrew">Hebrew</option>
+      <option value="Indonesian">Indonesian</option>
+      <option value="Malay">Malay</option>
+      <option value="Thai">Thai</option>
+      <option value="Vietnamese">Vietnamese</option>
+    </select>
+
+    <button class="swap-btn" id="swap-btn" title="Swap languages" aria-label="Swap languages">
+      <i class="ti ti-switch-horizontal" aria-hidden="true"></i>
+    </button>
+
+    <select id="tgt-lang">
+      <option value="Spanish">Spanish</option>
+      <option value="English">English</option>
+      <option value="French">French</option>
+      <option value="German">German</option>
+      <option value="Italian">Italian</option>
+      <option value="Portuguese">Portuguese</option>
+      <option value="Dutch">Dutch</option>
+      <option value="Russian">Russian</option>
+      <option value="Chinese (Simplified)">Chinese (Simplified)</option>
+      <option value="Chinese (Traditional)">Chinese (Traditional)</option>
+      <option value="Japanese">Japanese</option>
+      <option value="Korean">Korean</option>
+      <option value="Arabic">Arabic</option>
+      <option value="Hindi">Hindi</option>
+      <option value="Bengali">Bengali</option>
+      <option value="Turkish">Turkish</option>
+      <option value="Polish">Polish</option>
+      <option value="Ukrainian">Ukrainian</option>
+      <option value="Greek">Greek</option>
+      <option value="Swedish">Swedish</option>
+      <option value="Norwegian">Norwegian</option>
+      <option value="Danish">Danish</option>
+      <option value="Finnish">Finnish</option>
+      <option value="Hebrew">Hebrew</option>
+      <option value="Indonesian">Indonesian</option>
+      <option value="Malay">Malay</option>
+      <option value="Thai">Thai</option>
+      <option value="Vietnamese">Vietnamese</option>
+    </select>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <label for="src-text">Source text</label>
+      <textarea id="src-text" placeholder="Enter text to translate…" maxlength="2000"></textarea>
+      <div class="char-count"><span id="char-count">0</span> / 2000</div>
+    </div>
+    <div class="panel">
+      <label>Translation</label>
+      <div class="output empty" id="output">Translation will appear here…</div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="translate-btn" id="translate-btn">
+      <i class="ti ti-arrow-right" aria-hidden="true"></i> Translate
+    </button>
+    <button class="icon-btn" id="copy-btn" title="Copy translation" aria-label="Copy translation">
+      <i class="ti ti-copy" aria-hidden="true"></i>
+    </button>
+    <button class="icon-btn" id="speak-btn" title="Read aloud" aria-label="Read translation aloud">
+      <i class="ti ti-volume" aria-hidden="true"></i>
+    </button>
+    <button class="icon-btn" id="clear-btn" title="Clear" aria-label="Clear all">
+      <i class="ti ti-x" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <div class="error" id="error-msg"></div>
+
+  <p class="api-note">
+    Powered by Claude AI via the Anthropic API. Replace the fetch call with your own API key in production.
+    Keyboard shortcut: Ctrl / Cmd + Enter to translate.
+  </p>
+</div>
+
+<script>
+  const srcText = document.getElementById('src-text');
+  const srcLang = document.getElementById('src-lang');
+  const tgtLang = document.getElementById('tgt-lang');
+  const output = document.getElementById('output');
+  const translateBtn = document.getElementById('translate-btn');
+  const copyBtn = document.getElementById('copy-btn');
+  const speakBtn = document.getElementById('speak-btn');
+  const clearBtn = document.getElementById('clear-btn');
+  const swapBtn = document.getElementById('swap-btn');
+  const charCount = document.getElementById('char-count');
+  const errorMsg = document.getElementById('error-msg');
+
+  let lastTranslation = '';
+
+  // ── Character counter ──────────────────────────────────────────────────────
+  srcText.addEventListener('input', () => {
+    charCount.textContent = srcText.value.length;
+  });
+
+  // ── Swap languages ─────────────────────────────────────────────────────────
+  swapBtn.addEventListener('click', () => {
+    const srcVal = srcLang.value;
+    const tgtVal = tgtLang.value;
+    if (srcVal === 'auto') return;
+
+    const srcOptions = [...srcLang.options].map(o => o.value);
+    const tgtOptions = [...tgtLang.options].map(o => o.value);
+
+    if (tgtOptions.includes(srcVal)) tgtLang.value = srcVal;
+    if (srcOptions.includes(tgtVal)) srcLang.value = tgtVal;
+
+    // Also flip source/output text if a translation exists
+    if (lastTranslation) {
+      srcText.value = lastTranslation;
+      charCount.textContent = srcText.value.length;
+      output.textContent = 'Translation will appear here…';
+      output.className = 'output empty';
+      lastTranslation = '';
+    }
+  });
+
+  // ── Translate ──────────────────────────────────────────────────────────────
+  async function translate() {
+    const text = srcText.value.trim();
+    if (!text) { showError('Please enter some text to translate.'); return; }
+
+    hideError();
+
+    const src = srcLang.value === 'auto' ? 'the detected source language' : srcLang.value;
+    const tgt = tgtLang.value;
+
+    if (srcLang.value !== 'auto' && src === tgt) {
+      showError('Source and target languages are the same.');
+      return;
+    }
+
+    translateBtn.disabled = true;
+    output.textContent = 'Translating…';
+    output.className = 'output loading';
+
+    const prompt =
+      `Translate the following text from ${src} to ${tgt}. ` +
+      `Return ONLY the translated text with no explanation, no preamble, no quotation marks.\n\n` +
+      `Text to translate:\n${text}`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+
+      const result = data.content?.find(b => b.type === 'text')?.text?.trim() || '';
+      lastTranslation = result;
+      output.textContent = result;
+      output.className = 'output';
+    } catch (e) {
+      output.textContent = 'Translation will appear here…';
+      output.className = 'output empty';
+      showError('Translation failed: ' + (e.message || 'Please try again.'));
+    } finally {
+      translateBtn.disabled = false;
+    }
+  }
+
+  translateBtn.addEventListener('click', translate);
+
+  // Ctrl / Cmd + Enter shortcut
+  srcText.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) translate();
+  });
+
+  // ── Copy ───────────────────────────────────────────────────────────────────
+  copyBtn.addEventListener('click', () => {
+    if (!lastTranslation) return;
+    navigator.clipboard.writeText(lastTranslation).then(() => {
+      const icon = copyBtn.querySelector('i');
+      icon.className = 'ti ti-check';
+      setTimeout(() => { icon.className = 'ti ti-copy'; }, 1500);
+    });
+  });
+
+  // ── Text-to-speech ─────────────────────────────────────────────────────────
+  speakBtn.addEventListener('click', () => {
+    if (!lastTranslation) return;
+    const langMap = {
+      'English': 'en', 'Spanish': 'es', 'French': 'fr', 'German': 'de',
+      'Italian': 'it', 'Portuguese': 'pt', 'Dutch': 'nl', 'Russian': 'ru',
+      'Japanese': 'ja', 'Korean': 'ko', 'Chinese (Simplified)': 'zh-CN',
+      'Chinese (Traditional)': 'zh-TW', 'Arabic': 'ar', 'Hindi': 'hi',
+      'Turkish': 'tr', 'Polish': 'pl', 'Ukrainian': 'uk', 'Greek': 'el',
+      'Swedish': 'sv', 'Norwegian': 'no', 'Danish': 'da', 'Finnish': 'fi',
+      'Hebrew': 'he', 'Indonesian': 'id', 'Malay': 'ms', 'Thai': 'th',
+      'Vietnamese': 'vi', 'Bengali': 'bn'
+    };
+    const utt = new SpeechSynthesisUtterance(lastTranslation);
+    utt.lang = langMap[tgtLang.value] || 'en';
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utt);
+  });
+
+  // ── Clear ──────────────────────────────────────────────────────────────────
+  clearBtn.addEventListener('click', () => {
+    srcText.value = '';
+    charCount.textContent = '0';
+    output.textContent = 'Translation will appear here…';
+    output.className = 'output empty';
+    lastTranslation = '';
+    hideError();
+  });
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function showError(msg) { errorMsg.textContent = msg; errorMsg.style.display = 'block'; }
+  function hideError() { errorMsg.style.display = 'none'; }
+</script>
+
+</body>
+</html>
